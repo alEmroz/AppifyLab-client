@@ -12,7 +12,11 @@ export default function DesktopHeader() {
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLLIElement>(null);
   const router = useRouter();
-  const user = getUser();
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
+
+  useEffect(() => {
+    setUser(getUser());
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
