@@ -9,9 +9,10 @@ import type { Comment } from "../../api";
 
 interface CommentItemProps {
   comment: Comment;
+  onCommentAdded?: () => void;
 }
 
-export default function CommentItem({ comment }: CommentItemProps) {
+export default function CommentItem({ comment, onCommentAdded }: CommentItemProps) {
   const [liked, setLiked] = useState(comment.liked);
   const [likesCount, setLikesCount] = useState(comment.likes);
   const [showReplyInput, setShowReplyInput] = useState(false);
@@ -32,6 +33,26 @@ export default function CommentItem({ comment }: CommentItemProps) {
     }
   };
 
+  const handleReplyLike = async (replyId: string, wasLiked: boolean, prevCount: number) => {
+    setReplies((prev) =>
+      prev.map((r) =>
+        r.id === replyId ? { ...r, liked: !wasLiked, likes: wasLiked ? prevCount - 1 : prevCount + 1 } : r,
+      ),
+    );
+    try {
+      const result = await toggleLikeComment(replyId);
+      setReplies((prev) =>
+        prev.map((r) => (r.id === replyId ? { ...r, liked: result.is_liked, likes: result.likes_count } : r)),
+      );
+    } catch {
+      setReplies((prev) =>
+        prev.map((r) =>
+          r.id === replyId ? { ...r, liked: wasLiked, likes: prevCount } : r,
+        ),
+      );
+    }
+  };
+
   const handleReply = async (text: string) => {
     try {
       const newReply = await replyToComment(comment.id, text);
@@ -46,6 +67,7 @@ export default function CommentItem({ comment }: CommentItemProps) {
       };
       setReplies([...replies, reply]);
       setShowReplyInput(false);
+      onCommentAdded?.();
     } catch {
       // silently fail
     }
@@ -85,7 +107,7 @@ export default function CommentItem({ comment }: CommentItemProps) {
                     <p className="text-xs text-[#2D3748] mt-0.5">{reply.text}</p>
                   </div>
                   <div className="flex items-center gap-3 mt-1 px-1">
-                    <CommentLikeButton liked={reply.liked} count={reply.likes} onToggle={() => {}} />
+                    <CommentLikeButton liked={reply.liked} count={reply.likes} onToggle={() => handleReplyLike(reply.id, reply.liked, reply.likes)} />
                     <span className="text-xs text-[#C4C4C4]">{reply.time}</span>
                   </div>
                 </div>

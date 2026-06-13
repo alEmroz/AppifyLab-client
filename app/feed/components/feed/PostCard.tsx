@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import ThreeDotMenu from "../shared/ThreeDotMenu";
 import Avatar from "../shared/Avatar";
 import PostActions from "./PostActions";
@@ -12,6 +13,17 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, onDeletePost }: PostCardProps) {
+  const [commentCount, setCommentCount] = useState(post.commentsCount);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleCommentClick = () => {
+    inputRef.current?.focus();
+  };
+
+  const handleCommentAdded = () => {
+    setCommentCount((prev) => prev + 1);
+  };
+
   const menuItems = post.isOwner
     ? [
         { label: "Save Post", icon: <SaveIcon />, onClick: () => {} },
@@ -54,11 +66,12 @@ export default function PostCard({ post, onDeletePost }: PostCardProps) {
       <PostActions
         postId={post.id}
         likesCount={post.likes}
-        commentsCount={post.commentsCount}
+        commentsCount={commentCount}
         liked={post.liked}
+        onCommentClick={handleCommentClick}
       />
 
-      <CommentSection postUuid={post.id} />
+      <CommentSection postUuid={post.id} inputRef={inputRef} onCommentAdded={handleCommentAdded} />
     </div>
   );
 }

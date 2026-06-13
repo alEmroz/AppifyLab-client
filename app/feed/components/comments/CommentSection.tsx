@@ -7,9 +7,11 @@ import { fetchComments, addComment, Comment } from "../../api";
 
 interface CommentSectionProps {
   postUuid: string;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  onCommentAdded?: () => void;
 }
 
-export default function CommentSection({ postUuid }: CommentSectionProps) {
+export default function CommentSection({ postUuid, inputRef, onCommentAdded }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -32,6 +34,7 @@ export default function CommentSection({ postUuid }: CommentSectionProps) {
     try {
       const newComment = await addComment(postUuid, text);
       setComments([newComment, ...comments]);
+      onCommentAdded?.();
     } catch {
       // silently fail
     }
@@ -41,7 +44,7 @@ export default function CommentSection({ postUuid }: CommentSectionProps) {
 
   return (
     <div className="px-6 pb-4">
-      <CommentInput onSubmit={handleAddComment} />
+      <CommentInput onSubmit={handleAddComment} inputRef={inputRef} />
 
       {loading && (
         <div className="text-sm text-[#666666] mt-3">Loading comments...</div>
@@ -58,7 +61,7 @@ export default function CommentSection({ postUuid }: CommentSectionProps) {
 
       <div className="mt-4">
         {visibleComments.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} />
+          <CommentItem key={comment.id} comment={comment} onCommentAdded={onCommentAdded} />
         ))}
       </div>
     </div>
