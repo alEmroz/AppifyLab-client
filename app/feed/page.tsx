@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { getUser } from "@/lib/api";
 import FeedLayout from "./components/FeedLayout";
 import StoriesRow from "./components/feed/StoriesRow";
@@ -11,8 +11,11 @@ import { fetchPosts, createPost, deletePost, Post as PostType } from "./api";
 export default function FeedPage() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const currentUser = getUser();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -25,6 +28,7 @@ export default function FeedPage() {
             isOwner: p.userUuid === userUuid,
           }))
         );
+        setNextCursor(result.nextCursor);
       } catch {
         setError("Failed to load posts");
       } finally {
@@ -32,6 +36,41 @@ export default function FeedPage() {
       }
     })();
   }, [currentUser?.uuid]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const result = await fetchPosts(nextCursor);
+      const userUuid = currentUser?.uuid;
+      setPosts((prev) => [
+        ...prev,
+        ...result.posts.map((p) => ({
+          ...p,
+          isOwner: p.userUuid === userUuid,
+        })),
+      ]);
+      setNextCursor(result.nextCursor);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [nextCursor, loadingMore, currentUser?.uuid]);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const handleCreatePost = async (
     text: string,
@@ -73,6 +112,10 @@ export default function FeedPage() {
       {posts.map((post) => (
         <PostCard key={post.id} post={post} onDeletePost={handleDeletePost} />
       ))}
+      {loadingMore && (
+        <div className="text-center py-4 text-sm text-[#666666]">Loading more...</div>
+      )}
+      <div ref={sentinelRef} className="h-1" />
     </FeedLayout>
   );
 }

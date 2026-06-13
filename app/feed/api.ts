@@ -57,6 +57,7 @@ export interface Comment {
   likes: number;
   liked: boolean;
   replies: Comment[];
+  userUuid: string;
 }
 
 function timeAgo(dateStr: string): string {
@@ -83,6 +84,7 @@ export function toComment(c: ApiComment): Comment {
     likes: c.likes_count,
     liked: c.is_liked,
     replies: (c.replies || []).map(toComment),
+    userUuid: c.user.uuid,
   };
 }
 
@@ -103,8 +105,9 @@ export function toPost(p: ApiPost): Post {
   };
 }
 
-export async function fetchPosts() {
-  const res = await api.get("/posts");
+export async function fetchPosts(cursor?: string) {
+  const params = cursor ? { cursor } : {};
+  const res = await api.get("/posts", { params });
   const apiPosts: ApiPost[] = res.data.data;
   return {
     posts: apiPosts.map(toPost),
@@ -156,4 +159,13 @@ export async function replyToComment(commentUuid: string, text: string) {
 export async function toggleLikeComment(uuid: string) {
   const res = await api.post(`/comments/${uuid}/like`);
   return res.data as { is_liked: boolean; likes_count: number };
+}
+
+export async function fetchCommentLikers(uuid: string) {
+  const res = await api.get(`/comments/${uuid}/likes`);
+  return res.data.data.map((u: ApiUser) => ({ name: `${u.first_name} ${u.last_name}` }));
+}
+
+export async function deleteComment(uuid: string) {
+  await api.delete(`/comments/${uuid}`);
 }

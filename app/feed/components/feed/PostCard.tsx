@@ -71,7 +71,12 @@ export default function PostCard({ post, onDeletePost }: PostCardProps) {
         onCommentClick={handleCommentClick}
       />
 
-      <CommentSection postUuid={post.id} inputRef={inputRef} onCommentAdded={handleCommentAdded} />
+      <CommentSection
+        postUuid={post.id}
+        inputRef={inputRef}
+        onCommentAdded={handleCommentAdded}
+        onDeleteComment={() => setCommentCount((prev) => Math.max(0, prev - 1))}
+      />
     </div>
   );
 }

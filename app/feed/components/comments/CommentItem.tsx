@@ -4,19 +4,27 @@ import { useState } from "react";
 import Avatar from "../shared/Avatar";
 import CommentLikeButton from "./CommentLikeButton";
 import ReplyInput from "./ReplyInput";
-import { toggleLikeComment, replyToComment } from "../../api";
+import WhoLikedModal from "../feed/WhoLikedModal";
+import ConfirmModal from "../shared/ConfirmModal";
+import { toggleLikeComment, replyToComment, fetchCommentLikers, deleteComment } from "../../api";
 import type { Comment } from "../../api";
+import { getUser } from "@/lib/api";
 
 interface CommentItemProps {
   comment: Comment;
   onCommentAdded?: () => void;
+  onDelete?: (commentId: string) => void;
 }
 
-export default function CommentItem({ comment, onCommentAdded }: CommentItemProps) {
+export default function CommentItem({ comment, onCommentAdded, onDelete }: CommentItemProps) {
   const [liked, setLiked] = useState(comment.liked);
   const [likesCount, setLikesCount] = useState(comment.likes);
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replies, setReplies] = useState<Comment[]>(comment.replies || []);
+  const [showLikers, setShowLikers] = useState(false);
+  const [likersList, setLikersList] = useState<{ name: string }[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const currentUser = getUser();
 
   const handleLike = async () => {
     const prevLiked = liked;
@@ -64,6 +72,7 @@ export default function CommentItem({ comment, onCommentAdded }: CommentItemProp
         likes: newReply.likes,
         liked: newReply.liked,
         replies: [],
+        userUuid: newReply.userUuid,
       };
       setReplies([...replies, reply]);
       setShowReplyInput(false);
@@ -72,6 +81,28 @@ export default function CommentItem({ comment, onCommentAdded }: CommentItemProp
       // silently fail
     }
   };
+
+  const handleShowLikers = async () => {
+    try {
+      const users = await fetchCommentLikers(comment.id);
+      setLikersList(users);
+    } catch {
+      setLikersList([]);
+    }
+    setShowLikers(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteComment(comment.id);
+      onDelete?.(comment.id);
+    } catch {
+      // silently fail
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  const isOwner = currentUser?.uuid === comment.userUuid;
 
   return (
     <div className="flex gap-3 mb-4">
@@ -84,7 +115,7 @@ export default function CommentItem({ comment, onCommentAdded }: CommentItemProp
           <p className="text-sm text-[#2D3748] mt-0.5">{comment.text}</p>
         </div>
         <div className="flex items-center gap-4 mt-1.5 px-1">
-          <CommentLikeButton liked={liked} count={likesCount} onToggle={handleLike} />
+          <CommentLikeButton liked={liked} count={likesCount} onToggle={handleLike} onShowLikers={handleShowLikers} />
           <button
             onClick={() => setShowReplyInput(!showReplyInput)}
             className="text-xs text-[#666666] hover:text-[#1890FF]"
@@ -92,6 +123,18 @@ export default function CommentItem({ comment, onCommentAdded }: CommentItemProp
             Reply
           </button>
           <span className="text-xs text-[#C4C4C4]">{comment.time}</span>
+          {isOwner && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-xs text-[#C4C4C4] hover:text-red-500 ml-auto"
+              title="Delete comment"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {replies.length > 0 && (
@@ -107,7 +150,12 @@ export default function CommentItem({ comment, onCommentAdded }: CommentItemProp
                     <p className="text-xs text-[#2D3748] mt-0.5">{reply.text}</p>
                   </div>
                   <div className="flex items-center gap-3 mt-1 px-1">
-                    <CommentLikeButton liked={reply.liked} count={reply.likes} onToggle={() => handleReplyLike(reply.id, reply.liked, reply.likes)} />
+                    <CommentLikeButton
+                      liked={reply.liked}
+                      count={reply.likes}
+                      onToggle={() => handleReplyLike(reply.id, reply.liked, reply.likes)}
+                      onShowLikers={handleShowLikers}
+                    />
                     <span className="text-xs text-[#C4C4C4]">{reply.time}</span>
                   </div>
                 </div>
@@ -122,6 +170,15 @@ export default function CommentItem({ comment, onCommentAdded }: CommentItemProp
           </div>
         )}
       </div>
+
+      <WhoLikedModal open={showLikers} onClose={() => setShowLikers(false)} users={likersList} />
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete comment?"
+        message="This will also delete all replies."
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

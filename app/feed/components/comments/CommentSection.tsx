@@ -9,9 +9,10 @@ interface CommentSectionProps {
   postUuid: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
   onCommentAdded?: () => void;
+  onDeleteComment?: (commentId: string) => void;
 }
 
-export default function CommentSection({ postUuid, inputRef, onCommentAdded }: CommentSectionProps) {
+export default function CommentSection({ postUuid, inputRef, onCommentAdded, onDeleteComment }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -29,6 +30,11 @@ export default function CommentSection({ postUuid, inputRef, onCommentAdded }: C
       }
     })();
   }, [postUuid]);
+
+  const handleDeleteComment = (commentId: string) => {
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    onDeleteComment?.(commentId);
+  };
 
   const handleAddComment = async (text: string) => {
     try {
@@ -61,7 +67,7 @@ export default function CommentSection({ postUuid, inputRef, onCommentAdded }: C
 
       <div className="mt-4">
         {visibleComments.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} onCommentAdded={onCommentAdded} />
+          <CommentItem key={comment.id} comment={comment} onCommentAdded={onCommentAdded} onDelete={handleDeleteComment} />
         ))}
       </div>
     </div>
