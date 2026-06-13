@@ -3,9 +3,10 @@
 import Image from "next/image";
 import OAuthDivider from "../../login/components/OAuthDivider";
 import RegisterForm from "./RegisterForm";
+import type { RegisterData } from "@/lib/schemas";
 
 interface RegisterCardProps {
-  onRegister: (data: { email: string; password: string }) => void;
+  onRegister: (data: RegisterData) => Promise<Record<string, string[]> | null>;
 }
 
 export default function RegisterCard({ onRegister }: RegisterCardProps) {

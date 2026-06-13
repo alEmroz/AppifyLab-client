@@ -7,7 +7,6 @@ import CommentItem from "./CommentItem";
 interface Reply {
   id: string;
   author: string;
-  avatar: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -17,7 +16,6 @@ interface Reply {
 interface CommentData {
   id: string;
   author: string;
-  avatar: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -38,7 +36,6 @@ export default function CommentSection({ comments: initialComments, onAddComment
     const newComment: CommentData = {
       id: `c${Date.now()}`,
       author: "You",
-      avatar: "/assets/images/comment_img.png",
       text,
       likes: 0,
       liked: false,

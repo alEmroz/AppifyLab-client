@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import Avatar from "../shared/Avatar";
 
 interface CommentInputProps {
-  avatar?: string;
+  name?: string;
   onSubmit: (text: string) => void;
   placeholder?: string;
 }
 
 export default function CommentInput({
-  avatar = "/assets/images/comment_img.png",
+  name = "You",
   onSubmit,
   placeholder = "Write a comment",
 }: CommentInputProps) {
@@ -25,7 +25,7 @@ export default function CommentInput({
 
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-3">
-      <Image src={avatar} alt="" width={28} height={28} className="rounded-full w-7 h-7 object-cover flex-shrink-0" />
+      <Avatar name={name} size={28} />
       <div className="flex-1 flex items-center bg-[#F0F2F5] rounded-full px-4 py-1.5">
         <input
           type="text"

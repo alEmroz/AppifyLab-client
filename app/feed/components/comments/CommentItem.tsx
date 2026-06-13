@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import Avatar from "../shared/Avatar";
 import CommentLikeButton from "./CommentLikeButton";
 import ReplyInput from "./ReplyInput";
 
 interface Reply {
   id: string;
   author: string;
-  avatar: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -19,7 +18,6 @@ interface CommentItemProps {
   comment: {
     id: string;
     author: string;
-    avatar: string;
     text: string;
     likes: number;
     liked: boolean;
@@ -43,7 +41,6 @@ export default function CommentItem({ comment }: CommentItemProps) {
     const reply: Reply = {
       id: `r${Date.now()}`,
       author: "You",
-      avatar: "/assets/images/comment_img.png",
       text,
       likes: 0,
       liked: false,
@@ -55,7 +52,7 @@ export default function CommentItem({ comment }: CommentItemProps) {
 
   return (
     <div className="flex gap-3 mb-4">
-      <Image src={comment.avatar} alt={comment.author} width={32} height={32} className="rounded-full w-8 h-8 object-cover flex-shrink-0" />
+      <Avatar name={comment.author} size={32} />
       <div className="flex-1 min-w-0">
         <div className="bg-[#F0F2F5] rounded-lg px-4 py-2.5">
           <a href="/profile" className="text-sm font-semibold text-[#212121] hover:text-[#1890FF]">
@@ -78,7 +75,7 @@ export default function CommentItem({ comment }: CommentItemProps) {
           <div className="ml-4 mt-3 space-y-3">
             {replies.map((reply) => (
               <div key={reply.id} className="flex gap-3">
-                <Image src={reply.avatar} alt={reply.author} width={28} height={28} className="rounded-full w-7 h-7 object-cover flex-shrink-0" />
+                <Avatar name={reply.author} size={28} />
                 <div className="flex-1 min-w-0">
                   <div className="bg-[#F0F2F5] rounded-lg px-3 py-2">
                     <a href="/profile" className="text-xs font-semibold text-[#212121] hover:text-[#1890FF]">

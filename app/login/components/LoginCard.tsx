@@ -3,9 +3,10 @@
 import Image from "next/image";
 import OAuthDivider from "./OAuthDivider";
 import LoginForm from "./LoginForm";
+import type { LoginData } from "@/lib/schemas";
 
 interface LoginCardProps {
-  onLogin: (email: string, password: string) => void;
+  onLogin: (data: LoginData) => Promise<Record<string, string[]> | null>;
 }
 
 export default function LoginCard({ onLogin }: LoginCardProps) {

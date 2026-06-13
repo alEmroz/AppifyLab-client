@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Avatar from "../shared/Avatar";
 
 interface WhoLikedModalProps {
   open: boolean;
   onClose: () => void;
-  users?: { name: string; avatar: string }[];
+  users?: { name: string }[];
 }
 
 export default function WhoLikedModal({ open, onClose, users = [] }: WhoLikedModalProps) {
@@ -43,7 +44,7 @@ export default function WhoLikedModal({ open, onClose, users = [] }: WhoLikedMod
           <ul className="space-y-3">
             {users.map((user, i) => (
               <li key={i} className="flex items-center gap-3">
-                <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+                <Avatar name={user.name} size={32} />
                 <span className="text-sm text-[#212121]">{user.name}</span>
               </li>
             ))}

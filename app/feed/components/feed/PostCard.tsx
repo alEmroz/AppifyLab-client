@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import ThreeDotMenu from "../shared/ThreeDotMenu";
+import Avatar from "../shared/Avatar";
 import PostActions from "./PostActions";
 import CommentSection from "../comments/CommentSection";
 
 interface Reply {
   id: string;
   author: string;
-  avatar: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -19,7 +18,6 @@ interface Reply {
 interface CommentData {
   id: string;
   author: string;
-  avatar: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -31,7 +29,6 @@ interface PostCardProps {
   post: {
     id: string;
     author: string;
-    avatar: string;
     time: string;
     visibility: "public" | "private";
     text: string;
@@ -50,7 +47,6 @@ export default function PostCard({ post }: PostCardProps) {
     const newComment: CommentData = {
       id: `c${Date.now()}`,
       author: "You",
-      avatar: "/assets/images/comment_img.png",
       text,
       likes: 0,
       liked: false,
@@ -76,13 +72,7 @@ export default function PostCard({ post }: PostCardProps) {
       <div className="px-6 pt-6 pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image
-              src={post.avatar}
-              alt={post.author}
-              width={44}
-              height={44}
-              className="rounded-full w-11 h-11 object-cover"
-            />
+            <Avatar name={post.author} size={44} />
             <div>
               <h4 className="text-sm font-semibold text-[#212121]">{post.author}</h4>
               <p className="text-xs text-[#666666]">

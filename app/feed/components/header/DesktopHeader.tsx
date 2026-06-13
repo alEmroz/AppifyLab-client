@@ -2,12 +2,17 @@
 
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import api, { getUser, clearAuth } from "@/lib/api";
+import Avatar from "../shared/Avatar";
 
 export default function DesktopHeader() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLLIElement>(null);
+  const router = useRouter();
+  const user = getUser();
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -21,6 +26,16 @@ export default function DesktopHeader() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/logout");
+    } catch {
+      // proceed with local logout even if server request fails
+    }
+    clearAuth();
+    router.push("/login");
+  };
 
   return (
     <nav className="hidden lg:block bg-white border-b border-gray-200">
@@ -97,8 +112,10 @@ export default function DesktopHeader() {
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100"
               >
-                <Image src="/assets/images/profile.png" alt="Profile" width={36} height={36} className="rounded-full w-9 h-9 object-cover" />
-                <span className="text-sm font-medium text-[#212121]">Dylan Field</span>
+                <Avatar name={user ? `${user.first_name} ${user.last_name}` : "User"} size={36} />
+                <span className="text-sm font-medium text-[#212121]">
+                  {user ? `${user.first_name} ${user.last_name}` : "User"}
+                </span>
                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
                   <path fill="#112032" d="M5 5l.354.354L5 5.707l-.354-.353L5 5zm4.354-3.646l-4 4-.708-.708 4-4 .708.708zm-4.708 4l-4-4 .708-.708 4 4-.708.708z" />
                 </svg>
@@ -106,9 +123,11 @@ export default function DesktopHeader() {
               {profileOpen && (
                 <div className="absolute right-0 top-12 w-[240px] bg-white rounded-lg shadow-lg border border-gray-100 z-50 py-2">
                   <div className="px-4 py-3 flex items-center gap-3">
-                    <Image src="/assets/images/profile.png" alt="Profile" width={40} height={40} className="rounded-full w-10 h-10 object-cover" />
+                    <Avatar name={user ? `${user.first_name} ${user.last_name}` : "User"} size={40} />
                     <div>
-                      <h4 className="text-sm font-semibold text-[#212121]">Dylan Field</h4>
+                      <h4 className="text-sm font-semibold text-[#212121]">
+                        {user ? `${user.first_name} ${user.last_name}` : "User"}
+                      </h4>
                       <a href="/profile" className="text-xs text-[#1890FF] hover:underline">View Profile</a>
                     </div>
                   </div>
@@ -137,7 +156,10 @@ export default function DesktopHeader() {
                         <path fill="#112032" d="M5 5l.354.354L5.707 5l-.353-.354L5 5zM1.354 9.354l4-4-.708-.708-4 4 .708.708zm4-4.708l-4-4-.708.708 4 4 .708-.708z" opacity=".5" />
                       </svg>
                     </a>
-                    <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-[#212121]">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-[#212121]"
+                    >
                       <span className="flex items-center gap-3">
                         <svg width="19" height="19" viewBox="0 0 19 19" fill="none">
                           <path stroke="#377DFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6.667 18H2.889A1.889 1.889 0 011 16.111V2.89A1.889 1.889 0 012.889 1h3.778M13.277 14.222L18 9.5l-4.723-4.722M18 9.5H6.667" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getUser } from "@/lib/api";
 import FeedLayout from "./components/FeedLayout";
 import StoriesRow from "./components/feed/StoriesRow";
 import CreatePost from "./components/feed/CreatePost";
@@ -9,7 +10,6 @@ import PostCard from "./components/feed/PostCard";
 interface Reply {
   id: string;
   author: string;
-  avatar: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -19,7 +19,6 @@ interface Reply {
 interface Comment {
   id: string;
   author: string;
-  avatar: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -30,7 +29,6 @@ interface Comment {
 interface Post {
   id: string;
   author: string;
-  avatar: string;
   time: string;
   visibility: "public" | "private";
   text: string;
@@ -45,7 +43,6 @@ const initialPosts: Post[] = [
   {
     id: "1",
     author: "Dylan Field",
-    avatar: "/assets/images/post_img.png",
     time: "5 minute ago",
     visibility: "public",
     text: "-Healthy Tracking App",
@@ -57,7 +54,6 @@ const initialPosts: Post[] = [
       {
         id: "c1",
         author: "Radovan SkillArena",
-        avatar: "/assets/images/txt_img.png",
         text: "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.",
         likes: 198,
         liked: false,
@@ -69,7 +65,6 @@ const initialPosts: Post[] = [
   {
     id: "2",
     author: "Karim Saif",
-    avatar: "/assets/images/post_img.png",
     time: "10 minute ago",
     visibility: "public",
     text: "Beautiful sunset at the beach today!",
@@ -85,10 +80,10 @@ export default function FeedPage() {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
 
   const handleCreatePost = (text: string, image: File | null, visibility: "public" | "private") => {
+    const currentUser = getUser();
     const newPost: Post = {
       id: `p${Date.now()}`,
-      author: "Dylan Field",
-      avatar: "/assets/images/profile.png",
+      author: currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : "User",
       time: "just now",
       visibility,
       text,
