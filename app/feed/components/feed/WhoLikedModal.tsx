@@ -1,0 +1,55 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
+interface WhoLikedModalProps {
+  open: boolean;
+  onClose: () => void;
+  users?: { name: string; avatar: string }[];
+}
+
+export default function WhoLikedModal({ open, onClose, users = [] }: WhoLikedModalProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div ref={ref} className="bg-white rounded-lg shadow-xl w-[320px] max-h-[400px] overflow-auto p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-sm font-semibold text-[#212121]">Liked by</h4>
+          <button onClick={onClose} className="text-[#666666] hover:text-[#212121]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        {users.length === 0 ? (
+          <p className="text-center text-sm text-[#666666] py-4">No likes yet</p>
+        ) : (
+          <ul className="space-y-3">
+            {users.map((user, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+                <span className="text-sm text-[#212121]">{user.name}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
