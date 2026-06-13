@@ -3,6 +3,7 @@
 import { useState } from "react";
 import LikeButton from "./LikeButton";
 import WhoLikedModal from "./WhoLikedModal";
+import { toggleLikePost, fetchLikers } from "../../api";
 
 interface PostActionsProps {
   postId: string;
@@ -15,10 +16,31 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(likesCount);
   const [showLikes, setShowLikes] = useState(false);
+  const [likersList, setLikersList] = useState<{ name: string }[]>([]);
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    const prevLiked = liked;
+    const prevCount = count;
     setLiked(!liked);
     setCount(liked ? count - 1 : count + 1);
+    try {
+      const result = await toggleLikePost(postId);
+      setLiked(result.is_liked);
+      setCount(result.likes_count);
+    } catch {
+      setLiked(prevLiked);
+      setCount(prevCount);
+    }
+  };
+
+  const handleShowLikes = async () => {
+    try {
+      const likers = await fetchLikers(postId);
+      setLikersList(likers);
+    } catch {
+      setLikersList([]);
+    }
+    setShowLikes(true);
   };
 
   return (
@@ -30,7 +52,7 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
             <img src="/assets/images/react_img2.png" alt="" className="w-5 h-5 rounded-full border-2 border-white -ml-1" />
             <img src="/assets/images/react_img3.png" alt="" className="w-5 h-5 rounded-full border-2 border-white -ml-1 hidden md:block" />
           </div>
-          <button onClick={() => setShowLikes(true)} className="ml-1 hover:text-[#1890FF]">
+          <button onClick={handleShowLikes} className="ml-1 hover:text-[#1890FF]">
             {count}+
           </button>
         </div>
@@ -59,7 +81,7 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
         </button>
       </div>
 
-      <WhoLikedModal open={showLikes} onClose={() => setShowLikes(false)} />
+      <WhoLikedModal open={showLikes} onClose={() => setShowLikes(false)} users={likersList} />
     </>
   );
 }

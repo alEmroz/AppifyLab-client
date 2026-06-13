@@ -1,107 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getUser } from "@/lib/api";
 import FeedLayout from "./components/FeedLayout";
 import StoriesRow from "./components/feed/StoriesRow";
 import CreatePost from "./components/feed/CreatePost";
 import PostCard from "./components/feed/PostCard";
-
-interface Reply {
-  id: string;
-  author: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-}
-
-interface Comment {
-  id: string;
-  author: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-  replies?: Reply[];
-}
-
-interface Post {
-  id: string;
-  author: string;
-  time: string;
-  visibility: "public" | "private";
-  text: string;
-  image?: string;
-  likes: number;
-  liked: boolean;
-  comments: Comment[];
-  isOwner: boolean;
-}
-
-const initialPosts: Post[] = [
-  {
-    id: "1",
-    author: "Dylan Field",
-    time: "5 minute ago",
-    visibility: "public",
-    text: "-Healthy Tracking App",
-    image: "/assets/images/timeline_img.png",
-    likes: 9,
-    liked: true,
-    isOwner: true,
-    comments: [
-      {
-        id: "c1",
-        author: "Radovan SkillArena",
-        text: "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.",
-        likes: 198,
-        liked: false,
-        time: ".21m",
-        replies: [],
-      },
-    ],
-  },
-  {
-    id: "2",
-    author: "Karim Saif",
-    time: "10 minute ago",
-    visibility: "public",
-    text: "Beautiful sunset at the beach today!",
-    image: "/assets/images/img10.png",
-    likes: 24,
-    liked: false,
-    isOwner: false,
-    comments: [],
-  },
-];
+import { fetchPosts, createPost, deletePost, Post as PostType } from "./api";
 
 export default function FeedPage() {
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [posts, setPosts] = useState<PostType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const currentUser = getUser();
 
-  const handleCreatePost = (text: string, image: File | null, visibility: "public" | "private") => {
-    const currentUser = getUser();
-    const newPost: Post = {
-      id: `p${Date.now()}`,
-      author: currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : "User",
-      time: "just now",
-      visibility,
-      text,
-      image: image ? URL.createObjectURL(image) : undefined,
-      likes: 0,
-      liked: false,
-      comments: [],
-      isOwner: true,
-    };
-    setPosts([newPost, ...posts]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await fetchPosts();
+        const userUuid = currentUser?.uuid;
+        setPosts(
+          result.posts.map((p) => ({
+            ...p,
+            isOwner: p.userUuid === userUuid,
+          }))
+        );
+      } catch {
+        setError("Failed to load posts");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [currentUser?.uuid]);
+
+  const handleCreatePost = async (
+    text: string,
+    image: File | null,
+    visibility: "public" | "private"
+  ) => {
+    try {
+      const newPost = await createPost(text, visibility, image || undefined);
+      setPosts([{ ...newPost, isOwner: true }, ...posts]);
+    } catch {
+      // silently fail
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await deletePost(postId);
+      setPosts(posts.filter((p) => p.id !== postId));
+    } catch {
+      // silently fail
+    }
   };
 
   return (
     <FeedLayout>
       <StoriesRow />
       <CreatePost onPost={handleCreatePost} />
+      {loading && (
+        <div className="text-center py-8 text-sm text-[#666666]">Loading posts...</div>
+      )}
+      {error && (
+        <div className="text-center py-8 text-sm text-red-500">{error}</div>
+      )}
+      {!loading && !error && posts.length === 0 && (
+        <div className="text-center py-8 text-sm text-[#666666]">
+          No posts yet. Be the first to share something!
+        </div>
+      )}
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.id} post={post} onDeletePost={handleDeletePost} />
       ))}
     </FeedLayout>
   );

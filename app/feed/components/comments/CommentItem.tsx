@@ -4,50 +4,51 @@ import { useState } from "react";
 import Avatar from "../shared/Avatar";
 import CommentLikeButton from "./CommentLikeButton";
 import ReplyInput from "./ReplyInput";
-
-interface Reply {
-  id: string;
-  author: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-}
+import { toggleLikeComment, replyToComment } from "../../api";
+import type { Comment } from "../../api";
 
 interface CommentItemProps {
-  comment: {
-    id: string;
-    author: string;
-    text: string;
-    likes: number;
-    liked: boolean;
-    time: string;
-    replies?: Reply[];
-  };
+  comment: Comment;
 }
 
 export default function CommentItem({ comment }: CommentItemProps) {
   const [liked, setLiked] = useState(comment.liked);
   const [likesCount, setLikesCount] = useState(comment.likes);
   const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replies, setReplies] = useState<Reply[]>(comment.replies || []);
+  const [replies, setReplies] = useState<Comment[]>(comment.replies || []);
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    const prevLiked = liked;
+    const prevCount = likesCount;
     setLiked(!liked);
     setLikesCount(liked ? likesCount - 1 : likesCount + 1);
+    try {
+      const result = await toggleLikeComment(comment.id);
+      setLiked(result.is_liked);
+      setLikesCount(result.likes_count);
+    } catch {
+      setLiked(prevLiked);
+      setLikesCount(prevCount);
+    }
   };
 
-  const handleReply = (text: string) => {
-    const reply: Reply = {
-      id: `r${Date.now()}`,
-      author: "You",
-      text,
-      likes: 0,
-      liked: false,
-      time: "just now",
-    };
-    setReplies([...replies, reply]);
-    setShowReplyInput(false);
+  const handleReply = async (text: string) => {
+    try {
+      const newReply = await replyToComment(comment.id, text);
+      const reply: Comment = {
+        id: newReply.id,
+        author: newReply.author,
+        text: newReply.text,
+        time: newReply.time,
+        likes: newReply.likes,
+        liked: newReply.liked,
+        replies: [],
+      };
+      setReplies([...replies, reply]);
+      setShowReplyInput(false);
+    } catch {
+      // silently fail
+    }
   };
 
   return (

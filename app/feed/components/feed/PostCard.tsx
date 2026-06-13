@@ -1,66 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import ThreeDotMenu from "../shared/ThreeDotMenu";
 import Avatar from "../shared/Avatar";
 import PostActions from "./PostActions";
 import CommentSection from "../comments/CommentSection";
-
-interface Reply {
-  id: string;
-  author: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-}
-
-interface CommentData {
-  id: string;
-  author: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-  replies?: Reply[];
-}
+import type { Post } from "../../api";
 
 interface PostCardProps {
-  post: {
-    id: string;
-    author: string;
-    time: string;
-    visibility: "public" | "private";
-    text: string;
-    image?: string;
-    likes: number;
-    liked: boolean;
-    comments: CommentData[];
-    isOwner: boolean;
-  };
+  post: Post;
+  onDeletePost?: (postId: string) => void;
 }
 
-export default function PostCard({ post }: PostCardProps) {
-  const [comments, setComments] = useState<CommentData[]>(post.comments);
-
-  const handleAddComment = (text: string) => {
-    const newComment: CommentData = {
-      id: `c${Date.now()}`,
-      author: "You",
-      text,
-      likes: 0,
-      liked: false,
-      time: "just now",
-      replies: [],
-    };
-    setComments([...comments, newComment]);
-  };
-
+export default function PostCard({ post, onDeletePost }: PostCardProps) {
   const menuItems = post.isOwner
     ? [
         { label: "Save Post", icon: <SaveIcon />, onClick: () => {} },
         { label: "Edit Post", icon: <EditIcon />, onClick: () => {} },
-        { label: "Delete Post", icon: <DeleteIcon />, onClick: () => {}, danger: true },
+        { label: "Delete Post", icon: <DeleteIcon />, onClick: () => onDeletePost?.(post.id), danger: true },
       ]
     : [
         { label: "Save Post", icon: <SaveIcon />, onClick: () => {} },
@@ -98,11 +54,11 @@ export default function PostCard({ post }: PostCardProps) {
       <PostActions
         postId={post.id}
         likesCount={post.likes}
-        commentsCount={comments.length}
+        commentsCount={post.commentsCount}
         liked={post.liked}
       />
 
-      <CommentSection comments={comments} onAddComment={handleAddComment} />
+      <CommentSection postUuid={post.id} />
     </div>
   );
 }

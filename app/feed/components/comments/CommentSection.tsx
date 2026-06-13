@@ -1,49 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CommentInput from "./CommentInput";
 import CommentItem from "./CommentItem";
-
-interface Reply {
-  id: string;
-  author: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-}
-
-interface CommentData {
-  id: string;
-  author: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-  replies?: Reply[];
-}
+import { fetchComments, addComment, Comment } from "../../api";
 
 interface CommentSectionProps {
-  comments: CommentData[];
-  onAddComment: (text: string) => void;
+  postUuid: string;
 }
 
-export default function CommentSection({ comments: initialComments, onAddComment }: CommentSectionProps) {
-  const [comments, setComments] = useState(initialComments);
+export default function CommentSection({ postUuid }: CommentSectionProps) {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
-  const handleAddComment = (text: string) => {
-    const newComment: CommentData = {
-      id: `c${Date.now()}`,
-      author: "You",
-      text,
-      likes: 0,
-      liked: false,
-      time: "just now",
-      replies: [],
-    };
-    setComments([newComment, ...comments]);
-    onAddComment(text);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchComments(postUuid);
+        setComments(data);
+      } catch {
+        // silently fail
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [postUuid]);
+
+  const handleAddComment = async (text: string) => {
+    try {
+      const newComment = await addComment(postUuid, text);
+      setComments([newComment, ...comments]);
+    } catch {
+      // silently fail
+    }
   };
 
   const visibleComments = showAll ? comments : comments.slice(0, 2);
@@ -52,7 +43,11 @@ export default function CommentSection({ comments: initialComments, onAddComment
     <div className="px-6 pb-4">
       <CommentInput onSubmit={handleAddComment} />
 
-      {comments.length > 2 && !showAll && (
+      {loading && (
+        <div className="text-sm text-[#666666] mt-3">Loading comments...</div>
+      )}
+
+      {!loading && comments.length > 2 && !showAll && (
         <button
           onClick={() => setShowAll(true)}
           className="text-sm text-[#1890FF] mt-3 hover:underline"
