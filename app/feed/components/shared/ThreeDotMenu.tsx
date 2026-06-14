@@ -31,12 +31,12 @@ export default function ThreeDotMenu({ items }: ThreeDotMenuProps) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="p-1 rounded hover:bg-gray-100"
+        className="p-2.5 rounded-lg hover:bg-gray-100"
       >
-        <svg width="4" height="17" viewBox="0 0 4 17" fill="none">
-          <circle cx="2" cy="2" r="2" fill="#C4C4C4" />
-          <circle cx="2" cy="8" r="2" fill="#C4C4C4" />
-          <circle cx="2" cy="15" r="2" fill="#C4C4C4" />
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="4" r="2" fill="#C4C4C4" />
+          <circle cx="10" cy="10" r="2" fill="#C4C4C4" />
+          <circle cx="10" cy="16" r="2" fill="#C4C4C4" />
         </svg>
       </button>
       {open && (

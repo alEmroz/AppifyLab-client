@@ -94,6 +94,10 @@ export default function FeedPage() {
     }
   };
 
+  const handleEditPost = (postId: string, updated: PostType) => {
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, ...updated, isOwner: true } : p)));
+  };
+
   return (
     <FeedLayout>
       <StoriesRow />
@@ -110,7 +114,7 @@ export default function FeedPage() {
         </div>
       )}
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} onDeletePost={handleDeletePost} />
+        <PostCard key={post.id} post={post} onDeletePost={handleDeletePost} onEditPost={handleEditPost} />
       ))}
       {loadingMore && (
         <div className="text-center py-4 text-sm text-[#666666]">Loading more...</div>

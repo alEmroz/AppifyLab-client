@@ -127,6 +127,18 @@ export async function createPost(text: string, visibility: string, image?: File)
   return toPost(res.data);
 }
 
+export async function updatePost(uuid: string, text: string, visibility: string, image?: File) {
+  const formData = new FormData();
+  formData.append("_method", "PUT");
+  formData.append("text", text);
+  formData.append("visibility", visibility);
+  if (image) formData.append("image", image);
+  const res = await api.post(`/posts/${uuid}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return toPost(res.data);
+}
+
 export async function deletePost(uuid: string) {
   await api.delete(`/posts/${uuid}`);
 }

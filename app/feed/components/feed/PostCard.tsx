@@ -5,15 +5,20 @@ import ThreeDotMenu from "../shared/ThreeDotMenu";
 import Avatar from "../shared/Avatar";
 import PostActions from "./PostActions";
 import CommentSection from "../comments/CommentSection";
+import ConfirmModal from "../shared/ConfirmModal";
+import EditPostModal from "./EditPostModal";
 import type { Post } from "../../api";
 
 interface PostCardProps {
   post: Post;
   onDeletePost?: (postId: string) => void;
+  onEditPost?: (postId: string, updatedPost: Post) => void;
 }
 
-export default function PostCard({ post, onDeletePost }: PostCardProps) {
+export default function PostCard({ post, onDeletePost, onEditPost }: PostCardProps) {
   const [commentCount, setCommentCount] = useState(post.commentsCount);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleCommentClick = () => {
@@ -26,12 +31,10 @@ export default function PostCard({ post, onDeletePost }: PostCardProps) {
 
   const menuItems = post.isOwner
     ? [
-        { label: "Save Post", icon: <SaveIcon />, onClick: () => {} },
-        { label: "Edit Post", icon: <EditIcon />, onClick: () => {} },
-        { label: "Delete Post", icon: <DeleteIcon />, onClick: () => onDeletePost?.(post.id), danger: true },
+        { label: "Edit Post", icon: <EditIcon />, onClick: () => setShowEditModal(true) },
+        { label: "Delete Post", icon: <DeleteIcon />, onClick: () => setShowDeleteConfirm(true), danger: true },
       ]
     : [
-        { label: "Save Post", icon: <SaveIcon />, onClick: () => {} },
         { label: "Hide", icon: <HideIcon />, onClick: () => {} },
       ];
 
@@ -77,15 +80,25 @@ export default function PostCard({ post, onDeletePost }: PostCardProps) {
         onCommentAdded={handleCommentAdded}
         onDeleteComment={() => setCommentCount((prev) => Math.max(0, prev - 1))}
       />
-    </div>
-  );
-}
 
-function SaveIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path stroke="#1890FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M14.25 15.75L9 12l-5.25 3.75v-12a1.5 1.5 0 011.5-1.5h7.5a1.5 1.5 0 011.5 1.5v12z" />
-    </svg>
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete post?"
+        message="This will also delete all comments and replies."
+        onConfirm={() => { onDeletePost?.(post.id); setShowDeleteConfirm(false); }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <EditPostModal
+        open={showEditModal}
+        postId={post.id}
+        initialText={post.text}
+        initialVisibility={post.visibility}
+        initialImage={post.image}
+        onClose={() => setShowEditModal(false)}
+        onSaved={(updated) => onEditPost?.(post.id, updated)}
+      />
+    </div>
   );
 }
 

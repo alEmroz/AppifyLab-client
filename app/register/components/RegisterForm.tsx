@@ -139,7 +139,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
           disabled={loading}
           className="w-full bg-[#1890FF] text-white text-base font-semibold rounded-md py-3 hover:bg-blue-600 transition-colors disabled:opacity-60"
         >
-          {loading ? "Registering..." : "Login now"}
+          {loading ? "Registering..." : "Register now"}
         </button>
       </div>
 
