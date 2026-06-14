@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import Avatar from "../shared/Avatar";
 
 interface CreatePostProps {
   onPost: (text: string, image: File | null, visibility: "public" | "private") => void;
@@ -32,7 +32,7 @@ export default function CreatePost({ onPost }: CreatePostProps) {
   return (
     <div className="bg-white rounded-md p-6 mb-4">
       <div className="flex items-start gap-3 mb-4">
-        <Image src="/assets/images/txt_img.png" alt="You" width={40} height={40} className="rounded-full w-10 h-10 object-cover flex-shrink-0" />
+        <Avatar name="You" size={40} />
         <div className="flex-1">
           <textarea
             placeholder="Write something ..."

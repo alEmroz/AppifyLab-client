@@ -1,73 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useRef, useState } from "react";
 import ThreeDotMenu from "../shared/ThreeDotMenu";
+import Avatar from "../shared/Avatar";
 import PostActions from "./PostActions";
 import CommentSection from "../comments/CommentSection";
-
-interface Reply {
-  id: string;
-  author: string;
-  avatar: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-}
-
-interface CommentData {
-  id: string;
-  author: string;
-  avatar: string;
-  text: string;
-  likes: number;
-  liked: boolean;
-  time: string;
-  replies?: Reply[];
-}
+import ConfirmModal from "../shared/ConfirmModal";
+import EditPostModal from "./EditPostModal";
+import type { Post } from "../../api";
 
 interface PostCardProps {
-  post: {
-    id: string;
-    author: string;
-    avatar: string;
-    time: string;
-    visibility: "public" | "private";
-    text: string;
-    image?: string;
-    likes: number;
-    liked: boolean;
-    comments: CommentData[];
-    isOwner: boolean;
-  };
+  post: Post;
+  onDeletePost?: (postId: string) => void;
+  onEditPost?: (postId: string, updatedPost: Post) => void;
 }
 
-export default function PostCard({ post }: PostCardProps) {
-  const [comments, setComments] = useState<CommentData[]>(post.comments);
+export default function PostCard({ post, onDeletePost, onEditPost }: PostCardProps) {
+  const [commentCount, setCommentCount] = useState(post.commentsCount);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddComment = (text: string) => {
-    const newComment: CommentData = {
-      id: `c${Date.now()}`,
-      author: "You",
-      avatar: "/assets/images/comment_img.png",
-      text,
-      likes: 0,
-      liked: false,
-      time: "just now",
-      replies: [],
-    };
-    setComments([...comments, newComment]);
+  const handleCommentClick = () => {
+    inputRef.current?.focus();
+  };
+
+  const handleCommentAdded = () => {
+    setCommentCount((prev) => prev + 1);
   };
 
   const menuItems = post.isOwner
     ? [
-        { label: "Save Post", icon: <SaveIcon />, onClick: () => {} },
-        { label: "Edit Post", icon: <EditIcon />, onClick: () => {} },
-        { label: "Delete Post", icon: <DeleteIcon />, onClick: () => {}, danger: true },
+        { label: "Edit Post", icon: <EditIcon />, onClick: () => setShowEditModal(true) },
+        { label: "Delete Post", icon: <DeleteIcon />, onClick: () => setShowDeleteConfirm(true), danger: true },
       ]
     : [
-        { label: "Save Post", icon: <SaveIcon />, onClick: () => {} },
         { label: "Hide", icon: <HideIcon />, onClick: () => {} },
       ];
 
@@ -76,13 +43,7 @@ export default function PostCard({ post }: PostCardProps) {
       <div className="px-6 pt-6 pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image
-              src={post.avatar}
-              alt={post.author}
-              width={44}
-              height={44}
-              className="rounded-full w-11 h-11 object-cover"
-            />
+            <Avatar name={post.author} size={44} />
             <div>
               <h4 className="text-sm font-semibold text-[#212121]">{post.author}</h4>
               <p className="text-xs text-[#666666]">
@@ -108,20 +69,36 @@ export default function PostCard({ post }: PostCardProps) {
       <PostActions
         postId={post.id}
         likesCount={post.likes}
-        commentsCount={comments.length}
+        commentsCount={commentCount}
         liked={post.liked}
+        onCommentClick={handleCommentClick}
       />
 
-      <CommentSection comments={comments} onAddComment={handleAddComment} />
-    </div>
-  );
-}
+      <CommentSection
+        postUuid={post.id}
+        inputRef={inputRef}
+        onCommentAdded={handleCommentAdded}
+        onDeleteComment={() => setCommentCount((prev) => Math.max(0, prev - 1))}
+      />
 
-function SaveIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path stroke="#1890FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M14.25 15.75L9 12l-5.25 3.75v-12a1.5 1.5 0 011.5-1.5h7.5a1.5 1.5 0 011.5 1.5v12z" />
-    </svg>
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete post?"
+        message="This will also delete all comments and replies."
+        onConfirm={() => { onDeletePost?.(post.id); setShowDeleteConfirm(false); }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <EditPostModal
+        open={showEditModal}
+        postId={post.id}
+        initialText={post.text}
+        initialVisibility={post.visibility}
+        initialImage={post.image}
+        onClose={() => setShowEditModal(false)}
+        onSaved={(updated) => onEditPost?.(post.id, updated)}
+      />
+    </div>
   );
 }
 

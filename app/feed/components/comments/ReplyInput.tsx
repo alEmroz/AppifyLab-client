@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Avatar from "../shared/Avatar";
+import { getUser } from "@/lib/api";
 
 interface ReplyInputProps {
   onSubmit: (text: string) => void;
@@ -8,6 +10,8 @@ interface ReplyInputProps {
 
 export default function ReplyInput({ onSubmit }: ReplyInputProps) {
   const [text, setText] = useState("");
+  const user = getUser();
+  const name = user ? `${user.first_name} ${user.last_name}` : "You";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +22,7 @@ export default function ReplyInput({ onSubmit }: ReplyInputProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      <Avatar name={name} size={24} />
       <input
         type="text"
         value={text}
