@@ -68,12 +68,12 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
       <div className="px-6 pb-3 flex items-center justify-between text-sm">
         <div className="flex items-center" onClick={handleShowLikes}>
           <div className="flex items-center cursor-pointer">
-            <img src="/assets/images/react_img1.png" alt="" className="w-5 h-5 rounded-full border-2 border-white -ml-1 first:ml-0" />
-            <img src="/assets/images/react_img2.png" alt="" className="w-5 h-5 rounded-full border-2 border-white -ml-1" />
-            <img src="/assets/images/react_img3.png" alt="" className="w-5 h-5 rounded-full border-2 border-white -ml-1" />
-            <img src="/assets/images/react_img4.png" alt="" className="w-5 h-5 rounded-full border-2 border-white -ml-1 hidden md:block" />
-            <img src="/assets/images/react_img5.png" alt="" className="w-5 h-5 rounded-full border-2 border-white -ml-1 hidden md:block" />
-            <span className="w-5 h-5 rounded-full border-2 border-white bg-[#1890FF] text-white text-[10px] font-medium flex items-center justify-center -ml-1">{count}+</span>
+            <img src="/assets/images/react_img1.png" alt="" className="w-8 h-8 rounded-full border-2 border-white -ml-3 first:ml-0" />
+            <img src="/assets/images/react_img2.png" alt="" className="w-8 h-8 rounded-full border-2 border-white -ml-3" />
+            <img src="/assets/images/react_img3.png" alt="" className="w-8 h-8 rounded-full border-2 border-white -ml-3" />
+            <img src="/assets/images/react_img4.png" alt="" className="w-8 h-8 rounded-full border-2 border-white -ml-3 hidden md:block" />
+            <img src="/assets/images/react_img5.png" alt="" className="w-8 h-8 rounded-full border-2 border-white -ml-3 hidden md:block" />
+            <span className="w-8 h-8 rounded-full border-2 border-white bg-[#1890FF] text-white text-xs font-medium flex items-center justify-center -ml-3">{count}+</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
