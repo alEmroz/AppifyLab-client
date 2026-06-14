@@ -52,7 +52,7 @@ export default function FeedPage() {
       ]);
       setNextCursor(result.nextCursor);
     } catch {
-      // silently fail
+      console.error("Failed to load more posts");
     } finally {
       setLoadingMore(false);
     }
@@ -81,7 +81,7 @@ export default function FeedPage() {
       const newPost = await createPost(text, visibility, image || undefined);
       setPosts([{ ...newPost, isOwner: true }, ...posts]);
     } catch {
-      // silently fail
+      console.error("Failed to create post");
     }
   };
 
@@ -90,7 +90,7 @@ export default function FeedPage() {
       await deletePost(postId);
       setPosts(posts.filter((p) => p.id !== postId));
     } catch {
-      // silently fail
+      console.error("Failed to delete post");
     }
   };
 

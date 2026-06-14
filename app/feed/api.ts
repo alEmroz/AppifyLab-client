@@ -111,8 +111,8 @@ export async function fetchPosts(cursor?: string) {
   const apiPosts: ApiPost[] = res.data.data;
   return {
     posts: apiPosts.map(toPost),
-    nextCursor: (res.data.next_cursor as string | null) ?? null,
-    prevCursor: (res.data.prev_cursor as string | null) ?? null,
+    nextCursor: (res.data.meta?.next_cursor as string | null) ?? null,
+    prevCursor: (res.data.meta?.prev_cursor as string | null) ?? null,
   };
 }
 
@@ -141,9 +141,14 @@ export async function fetchLikers(uuid: string) {
   return res.data.data.map((u: ApiUser) => ({ name: `${u.first_name} ${u.last_name}` }));
 }
 
-export async function fetchComments(postUuid: string) {
-  const res = await api.get(`/posts/${postUuid}/comments`);
-  return res.data.data.map(toComment);
+export async function fetchComments(postUuid: string, cursor?: string) {
+  const params = cursor ? { cursor } : {};
+  const res = await api.get(`/posts/${postUuid}/comments`, { params });
+  const comments = (res?.data?.data || []);
+  return {
+    comments: comments.map(toComment),
+    nextCursor: (res.data.meta?.next_cursor as string | null) ?? null,
+  };
 }
 
 export async function addComment(postUuid: string, text: string) {

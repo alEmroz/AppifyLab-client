@@ -78,7 +78,7 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       setShowReplyInput(false);
       onCommentAdded?.();
     } catch {
-      // silently fail
+      console.error("Failed to reply to comment");
     }
   };
 
@@ -97,7 +97,7 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       await deleteComment(comment.id);
       onDelete?.(comment.id);
     } catch {
-      // silently fail
+      console.error("Failed to delete comment");
     }
     setShowDeleteConfirm(false);
   };
