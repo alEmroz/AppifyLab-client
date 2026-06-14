@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import LikeButton from "./LikeButton";
-import WhoLikedModal from "./WhoLikedModal";
+import LikersModal from "./LikersModal";
 import { toggleLikePost, fetchLikers } from "../../api";
 
 interface PostActionsProps {
@@ -18,6 +18,8 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
   const [count, setCount] = useState(likesCount);
   const [showLikes, setShowLikes] = useState(false);
   const [likersList, setLikersList] = useState<{ name: string }[]>([]);
+  const [likersCursor, setLikersCursor] = useState<string | null>(null);
+  const [loadingLikers, setLoadingLikers] = useState(false);
 
   const handleLike = async () => {
     const prevLiked = liked;
@@ -35,13 +37,31 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
   };
 
   const handleShowLikes = async () => {
+    setLoadingLikers(true);
     try {
-      const likers = await fetchLikers(postId);
-      setLikersList(likers);
+      const result = await fetchLikers(postId);
+      setLikersList(result.users);
+      setLikersCursor(result.nextCursor);
     } catch {
       setLikersList([]);
+    } finally {
+      setLoadingLikers(false);
     }
     setShowLikes(true);
+  };
+
+  const handleLoadMoreLikers = async () => {
+    if (!likersCursor || loadingLikers) return;
+    setLoadingLikers(true);
+    try {
+      const result = await fetchLikers(postId, likersCursor);
+      setLikersList((prev) => [...prev, ...result.users]);
+      setLikersCursor(result.nextCursor);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingLikers(false);
+    }
   };
 
   return (
@@ -84,7 +104,14 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
         </button>
       </div>
 
-      <WhoLikedModal open={showLikes} onClose={() => setShowLikes(false)} users={likersList} />
+      <LikersModal
+        open={showLikes}
+        onClose={() => setShowLikes(false)}
+        users={likersList}
+        hasMore={!!likersCursor}
+        loadingMore={loadingLikers}
+        onLoadMore={handleLoadMoreLikers}
+      />
     </>
   );
 }

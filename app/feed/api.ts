@@ -136,9 +136,14 @@ export async function toggleLikePost(uuid: string) {
   return res.data as { is_liked: boolean; likes_count: number };
 }
 
-export async function fetchLikers(uuid: string) {
-  const res = await api.get(`/posts/${uuid}/likes`);
-  return res.data.data.map((u: ApiUser) => ({ name: `${u.first_name} ${u.last_name}` }));
+export async function fetchLikers(uuid: string, cursor?: string) {
+  const params = cursor ? { cursor } : {};
+  const res = await api.get(`/posts/${uuid}/likes`, { params });
+  const users = res.data.data || [];
+  return {
+    users: users.map((u: ApiUser) => ({ name: `${u.first_name} ${u.last_name}` })),
+    nextCursor: (res.data.meta?.next_cursor as string | null) ?? null,
+  };
 }
 
 export async function fetchComments(postUuid: string, cursor?: string) {
@@ -166,9 +171,14 @@ export async function toggleLikeComment(uuid: string) {
   return res.data as { is_liked: boolean; likes_count: number };
 }
 
-export async function fetchCommentLikers(uuid: string) {
-  const res = await api.get(`/comments/${uuid}/likes`);
-  return res.data.data.map((u: ApiUser) => ({ name: `${u.first_name} ${u.last_name}` }));
+export async function fetchCommentLikers(uuid: string, cursor?: string) {
+  const params = cursor ? { cursor } : {};
+  const res = await api.get(`/comments/${uuid}/likes`, { params });
+  const users = res.data.data || [];
+  return {
+    users: users.map((u: ApiUser) => ({ name: `${u.first_name} ${u.last_name}` })),
+    nextCursor: (res.data.meta?.next_cursor as string | null) ?? null,
+  };
 }
 
 export async function deleteComment(uuid: string) {

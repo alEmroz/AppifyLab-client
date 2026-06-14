@@ -4,7 +4,7 @@ import { useState } from "react";
 import Avatar from "../shared/Avatar";
 import CommentLikeButton from "./CommentLikeButton";
 import ReplyInput from "./ReplyInput";
-import WhoLikedModal from "../feed/WhoLikedModal";
+import LikersModal from "../feed/LikersModal";
 import ConfirmModal from "../shared/ConfirmModal";
 import { toggleLikeComment, replyToComment, fetchCommentLikers, deleteComment } from "../../api";
 import type { Comment } from "../../api";
@@ -23,6 +23,8 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
   const [replies, setReplies] = useState<Comment[]>(comment.replies || []);
   const [showLikers, setShowLikers] = useState(false);
   const [likersList, setLikersList] = useState<{ name: string }[]>([]);
+  const [likersCursor, setLikersCursor] = useState<string | null>(null);
+  const [loadingLikers, setLoadingLikers] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const currentUser = getUser();
 
@@ -83,13 +85,31 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
   };
 
   const handleShowLikers = async () => {
+    setLoadingLikers(true);
     try {
-      const users = await fetchCommentLikers(comment.id);
-      setLikersList(users);
+      const result = await fetchCommentLikers(comment.id);
+      setLikersList(result.users);
+      setLikersCursor(result.nextCursor);
     } catch {
       setLikersList([]);
+    } finally {
+      setLoadingLikers(false);
     }
     setShowLikers(true);
+  };
+
+  const handleLoadMoreLikers = async () => {
+    if (!likersCursor || loadingLikers) return;
+    setLoadingLikers(true);
+    try {
+      const result = await fetchCommentLikers(comment.id, likersCursor);
+      setLikersList((prev) => [...prev, ...result.users]);
+      setLikersCursor(result.nextCursor);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingLikers(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -171,7 +191,14 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
         )}
       </div>
 
-      <WhoLikedModal open={showLikers} onClose={() => setShowLikers(false)} users={likersList} />
+      <LikersModal
+        open={showLikers}
+        onClose={() => setShowLikers(false)}
+        users={likersList}
+        hasMore={!!likersCursor}
+        loadingMore={loadingLikers}
+        onLoadMore={handleLoadMoreLikers}
+      />
       <ConfirmModal
         open={showDeleteConfirm}
         title="Delete comment?"
