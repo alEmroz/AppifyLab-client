@@ -122,34 +122,48 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
     setShowDeleteConfirm(false);
   };
 
+  const handleReplyDelete = async (replyId: string) => {
+    try {
+      await deleteComment(replyId);
+      setReplies((prev) => prev.filter((r) => r.id !== replyId));
+    } catch {
+      console.error("Failed to delete reply");
+    }
+  };
+
   const isOwner = currentUser?.uuid === comment.userUuid;
 
   return (
-    <div className="flex gap-3 mb-4">
-      <Avatar name={comment.author} size={32} />
+    <div className="flex gap-3 mb-6">
+      <Avatar name={comment.author} size={40} />
       <div className="flex-1 min-w-0">
-        <div className="bg-[#F0F2F5] rounded-lg px-4 py-2.5">
+        <div className="bg-[#F6F6F6] rounded-[18px] px-3 py-3 relative mb-2">
           <a href="/profile" className="text-sm font-semibold text-[#212121] hover:text-[#1890FF]">
             {comment.author}
           </a>
           <p className="text-sm text-[#2D3748] mt-0.5">{comment.text}</p>
-        </div>
-        <div className="flex items-center gap-4 mt-1.5 px-1">
           <CommentLikeButton liked={liked} count={likesCount} onToggle={handleLike} onShowLikers={handleShowLikers} />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button onClick={handleLike} className="text-sm font-medium text-[#212121] hover:underline">
+            Like
+          </button>
           <button
             onClick={() => setShowReplyInput(!showReplyInput)}
-            className="text-xs text-[#666666] hover:text-[#1890FF]"
+            className="text-sm font-medium text-[#212121] hover:underline"
           >
             Reply
           </button>
-          <span className="text-xs text-[#C4C4C4]">{comment.time}</span>
+          <span className="text-sm font-medium text-[#212121]">Share</span>
+          <span className="text-sm text-[#666666]">{comment.time}</span>
           {isOwner && (
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="text-xs text-[#C4C4C4] hover:text-red-500 ml-auto"
+              className="text-xs text-[#C4C4C4] hover:text-red-500"
               title="Delete comment"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
@@ -163,20 +177,36 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
               <div key={reply.id} className="flex gap-3">
                 <Avatar name={reply.author} size={28} />
                 <div className="flex-1 min-w-0">
-                  <div className="bg-[#F0F2F5] rounded-lg px-3 py-2">
+                  <div className="bg-[#F6F6F6] rounded-[18px] px-3 py-2 relative mb-5">
                     <a href="/profile" className="text-xs font-semibold text-[#212121] hover:text-[#1890FF]">
                       {reply.author}
                     </a>
                     <p className="text-xs text-[#2D3748] mt-0.5">{reply.text}</p>
+                    <div onClick={() => handleReplyLike(reply.id, reply.liked, reply.likes)} className="absolute right-0 bottom-0 translate-y-1/2 flex items-center gap-0.5 bg-white shadow-lg rounded-xl px-3 py-1 cursor-pointer z-10">
+                      <span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill={reply.liked ? "red" : "none"} stroke="red" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                      </span>
+                      {reply.likes > 0 && (
+                        <span className="text-sm font-medium text-[#212121] ml-0.5">{reply.likes}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 px-1">
-                    <CommentLikeButton
-                      liked={reply.liked}
-                      count={reply.likes}
-                      onToggle={() => handleReplyLike(reply.id, reply.liked, reply.likes)}
-                      onShowLikers={handleShowLikers}
-                    />
-                    <span className="text-xs text-[#C4C4C4]">{reply.time}</span>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-xs text-[#666666]">{reply.time}</span>
+                    {currentUser?.uuid === reply.userUuid && (
+                      <button
+                        onClick={() => handleReplyDelete(reply.id)}
+                        className="text-xs text-[#C4C4C4] hover:text-red-500"
+                        title="Delete reply"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -185,7 +215,7 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
         )}
 
         {showReplyInput && (
-          <div className="mt-3 ml-4">
+          <div className="mt-3">
             <ReplyInput onSubmit={handleReply} />
           </div>
         )}
