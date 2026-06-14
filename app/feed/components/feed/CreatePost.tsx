@@ -33,7 +33,7 @@ export default function CreatePost({ onPost }: CreatePostProps) {
     <div className="bg-white rounded-md p-6 mb-4">
       <div className="flex items-start gap-3 mb-4">
         <Avatar name="You" size={40} />
-        <div className="flex-1">
+        <div className="flex-1 pt-3">
           <textarea
             placeholder="Write something ..."
             value={text}
