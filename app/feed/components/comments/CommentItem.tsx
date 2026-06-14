@@ -6,6 +6,7 @@ import CommentLikeButton from "./CommentLikeButton";
 import ReplyInput from "./ReplyInput";
 import LikersModal from "../feed/LikersModal";
 import ConfirmModal from "../shared/ConfirmModal";
+import { toast } from "react-toastify";
 import { toggleLikeComment, replyToComment, fetchCommentLikers, deleteComment } from "../../api";
 import type { Comment } from "../../api";
 import { getUser } from "@/lib/api";
@@ -37,7 +38,8 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       const result = await toggleLikeComment(comment.id);
       setLiked(result.is_liked);
       setLikesCount(result.likes_count);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setLiked(prevLiked);
       setLikesCount(prevCount);
     }
@@ -54,7 +56,8 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       setReplies((prev) =>
         prev.map((r) => (r.id === replyId ? { ...r, liked: result.is_liked, likes: result.likes_count } : r)),
       );
-    } catch {
+    } catch (err) {
+      console.error(err);
       setReplies((prev) =>
         prev.map((r) =>
           r.id === replyId ? { ...r, liked: wasLiked, likes: prevCount } : r,
@@ -79,8 +82,9 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       setReplies([...replies, reply]);
       setShowReplyInput(false);
       onCommentAdded?.();
-    } catch {
-      console.error("Failed to reply to comment");
+    } catch (err) {
+      toast.error("Couldn't add your reply. Try again.");
+      console.error(err);
     }
   };
 
@@ -90,7 +94,8 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       const result = await fetchCommentLikers(comment.id);
       setLikersList(result.users);
       setLikersCursor(result.nextCursor);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setLikersList([]);
     } finally {
       setLoadingLikers(false);
@@ -105,8 +110,9 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       const result = await fetchCommentLikers(comment.id, likersCursor);
       setLikersList((prev) => [...prev, ...result.users]);
       setLikersCursor(result.nextCursor);
-    } catch {
-      // silently fail
+    } catch (err) {
+      toast.error("Couldn't load likes.");
+      console.error(err);
     } finally {
       setLoadingLikers(false);
     }
@@ -116,8 +122,10 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
     try {
       await deleteComment(comment.id);
       onDelete?.(comment.id);
-    } catch {
-      console.error("Failed to delete comment");
+      toast.success("Comment deleted successfully.");
+    } catch (err) {
+      toast.error("Couldn't delete the comment. Try again.");
+      console.error(err);
     }
     setShowDeleteConfirm(false);
   };
@@ -126,8 +134,10 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
     try {
       await deleteComment(replyId);
       setReplies((prev) => prev.filter((r) => r.id !== replyId));
-    } catch {
-      console.error("Failed to delete reply");
+      toast.success("Reply deleted successfully.");
+    } catch (err) {
+      toast.error("Couldn't delete the reply. Try again.");
+      console.error(err);
     }
   };
 

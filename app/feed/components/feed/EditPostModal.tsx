@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { toast } from "react-toastify";
 import { updatePost } from "../../api";
 
 interface EditPostModalProps {
@@ -63,8 +64,9 @@ export default function EditPostModal({
       const updated = await updatePost(postId, text, visibility, image || undefined);
       onSaved(updated);
       onClose();
-    } catch {
-      console.error("Failed to update post");
+    } catch (err) {
+      toast.error("Couldn't update your post. Please try again.");
+      console.error(err);
     } finally {
       setSaving(false);
     }
