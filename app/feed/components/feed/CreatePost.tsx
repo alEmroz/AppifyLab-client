@@ -31,14 +31,14 @@ export default function CreatePost({ onPost }: CreatePostProps) {
 
   return (
     <div className="bg-white rounded-md p-6 mb-4">
-      <div className="flex items-start gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4">
         <Avatar name="You" size={40} />
         <div className="flex-1 pt-3">
           <textarea
             placeholder="Write something ..."
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="w-full bg-transparent border-0 text-sm text-[#212121] placeholder:text-[#666666] resize-none focus:ring-0 min-h-[40px]"
+            className="w-full bg-transparent border-0 text-sm text-[#212121] placeholder:text-[#666666] resize-none focus:ring-0 py-2.5"
             rows={1}
           />
         </div>

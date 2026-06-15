@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ToastContainer } from "react-toastify";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,18 @@ export default function RootLayout({
         />
         <link rel="icon" href="/assets/images/logo-copy.svg" />
       </head>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <ToastContainer
+          position="bottom-right"
+          autoClose={2500}
+          hideProgressBar
+          closeOnClick
+          pauseOnFocusLoss
+          pauseOnHover
+          theme="light"
+        />
+      </body>
     </html>
   );
 }

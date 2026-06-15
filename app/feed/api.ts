@@ -196,3 +196,8 @@ export async function fetchCommentLikers(uuid: string, cursor?: string) {
 export async function deleteComment(uuid: string) {
   await api.delete(`/comments/${uuid}`);
 }
+
+export async function updateComment(uuid: string, text: string) {
+  const res = await api.put(`/comments/${uuid}`, { text });
+  return toComment(res.data);
+}

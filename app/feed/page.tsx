@@ -6,6 +6,7 @@ import FeedLayout from "./components/FeedLayout";
 import StoriesRow from "./components/feed/StoriesRow";
 import CreatePost from "./components/feed/CreatePost";
 import PostCard from "./components/feed/PostCard";
+import { toast } from "react-toastify";
 import { fetchPosts, createPost, deletePost, Post as PostType } from "./api";
 
 export default function FeedPage() {
@@ -29,7 +30,8 @@ export default function FeedPage() {
           }))
         );
         setNextCursor(result.nextCursor);
-      } catch {
+      } catch (err) {
+        console.error(err);
         setError("Failed to load posts");
       } finally {
         setLoading(false);
@@ -51,8 +53,9 @@ export default function FeedPage() {
         })),
       ]);
       setNextCursor(result.nextCursor);
-    } catch {
-      console.error("Failed to load more posts");
+    } catch (err) {
+      toast.error("Couldn't load more posts. Try again.");
+      console.error(err);
     } finally {
       setLoadingMore(false);
     }
@@ -80,8 +83,9 @@ export default function FeedPage() {
     try {
       const newPost = await createPost(text, visibility, image || undefined);
       setPosts([{ ...newPost, isOwner: true }, ...posts]);
-    } catch {
-      console.error("Failed to create post");
+    } catch (err) {
+      toast.error("Couldn't create your post. Please try again.");
+      console.error(err);
     }
   };
 
@@ -89,8 +93,10 @@ export default function FeedPage() {
     try {
       await deletePost(postId);
       setPosts(posts.filter((p) => p.id !== postId));
-    } catch {
-      console.error("Failed to delete post");
+      toast.success("Post deleted successfully.");
+    } catch (err) {
+      toast.error("Couldn't delete the post. Please try again.");
+      console.error(err);
     }
   };
 

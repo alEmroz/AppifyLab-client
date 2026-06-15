@@ -6,7 +6,8 @@ import CommentLikeButton from "./CommentLikeButton";
 import ReplyInput from "./ReplyInput";
 import LikersModal from "../feed/LikersModal";
 import ConfirmModal from "../shared/ConfirmModal";
-import { toggleLikeComment, replyToComment, fetchCommentLikers, deleteComment } from "../../api";
+import { toast } from "react-toastify";
+import { toggleLikeComment, replyToComment, fetchCommentLikers, deleteComment, updateComment } from "../../api";
 import type { Comment } from "../../api";
 import { getUser } from "@/lib/api";
 
@@ -26,6 +27,10 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
   const [likersCursor, setLikersCursor] = useState<string | null>(null);
   const [loadingLikers, setLoadingLikers] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editReplyText, setEditReplyText] = useState("");
   const currentUser = getUser();
 
   const handleLike = async () => {
@@ -37,7 +42,8 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       const result = await toggleLikeComment(comment.id);
       setLiked(result.is_liked);
       setLikesCount(result.likes_count);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setLiked(prevLiked);
       setLikesCount(prevCount);
     }
@@ -54,7 +60,8 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       setReplies((prev) =>
         prev.map((r) => (r.id === replyId ? { ...r, liked: result.is_liked, likes: result.likes_count } : r)),
       );
-    } catch {
+    } catch (err) {
+      console.error(err);
       setReplies((prev) =>
         prev.map((r) =>
           r.id === replyId ? { ...r, liked: wasLiked, likes: prevCount } : r,
@@ -79,9 +86,32 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       setReplies([...replies, reply]);
       setShowReplyInput(false);
       onCommentAdded?.();
-    } catch {
-      console.error("Failed to reply to comment");
+    } catch (err) {
+      toast.error("Couldn't add your reply. Try again.");
+      console.error(err);
     }
+  };
+
+  const handleStartEdit = () => {
+    setEditText(comment.text);
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editText.trim()) return;
+    try {
+      const updated = await updateComment(comment.id, editText);
+      comment.text = updated.text;
+      setEditing(false);
+      toast.success("Comment updated.");
+    } catch (err) {
+      toast.error("Couldn't update the comment. Try again.");
+      console.error(err);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditing(false);
   };
 
   const handleShowLikers = async () => {
@@ -90,7 +120,8 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       const result = await fetchCommentLikers(comment.id);
       setLikersList(result.users);
       setLikersCursor(result.nextCursor);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setLikersList([]);
     } finally {
       setLoadingLikers(false);
@@ -105,8 +136,9 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
       const result = await fetchCommentLikers(comment.id, likersCursor);
       setLikersList((prev) => [...prev, ...result.users]);
       setLikersCursor(result.nextCursor);
-    } catch {
-      // silently fail
+    } catch (err) {
+      toast.error("Couldn't load likes.");
+      console.error(err);
     } finally {
       setLoadingLikers(false);
     }
@@ -116,8 +148,10 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
     try {
       await deleteComment(comment.id);
       onDelete?.(comment.id);
-    } catch {
-      console.error("Failed to delete comment");
+      toast.success("Comment deleted successfully.");
+    } catch (err) {
+      toast.error("Couldn't delete the comment. Try again.");
+      console.error(err);
     }
     setShowDeleteConfirm(false);
   };
@@ -126,9 +160,35 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
     try {
       await deleteComment(replyId);
       setReplies((prev) => prev.filter((r) => r.id !== replyId));
-    } catch {
-      console.error("Failed to delete reply");
+      toast.success("Reply deleted successfully.");
+    } catch (err) {
+      toast.error("Couldn't delete the reply. Try again.");
+      console.error(err);
     }
+  };
+
+  const handleStartReplyEdit = (replyId: string, text: string) => {
+    setEditReplyText(text);
+    setEditingReplyId(replyId);
+  };
+
+  const handleSaveReplyEdit = async (replyId: string) => {
+    if (!editReplyText.trim()) return;
+    try {
+      const updated = await updateComment(replyId, editReplyText);
+      setReplies((prev) =>
+        prev.map((r) => (r.id === replyId ? { ...r, text: updated.text } : r)),
+      );
+      setEditingReplyId(null);
+      toast.success("Reply updated.");
+    } catch (err) {
+      toast.error("Couldn't update the reply. Try again.");
+      console.error(err);
+    }
+  };
+
+  const handleCancelReplyEdit = () => {
+    setEditingReplyId(null);
   };
 
   const isOwner = currentUser?.uuid === comment.userUuid;
@@ -141,7 +201,33 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
           <a href="/profile" className="text-sm font-semibold text-[#212121] hover:text-[#1890FF]">
             {comment.author}
           </a>
-          <p className="text-sm text-[#2D3748] mt-0.5">{comment.text}</p>
+          {editing ? (
+            <div className="mt-2">
+              <textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="w-full bg-white border border-[#E8E8E8] rounded-md p-2 text-sm text-[#2D3748] resize-none focus:border-[#1890FF] focus:ring-0 min-h-[60px]"
+                rows={2}
+              />
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={!editText.trim()}
+                  className="px-3 py-1 text-xs text-white bg-[#1890FF] hover:bg-blue-600 rounded-md disabled:opacity-50"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-3 py-1 text-xs text-[#666666] hover:bg-gray-100 rounded-md"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-[#2D3748] mt-0.5">{comment.text}</p>
+          )}
           <CommentLikeButton liked={liked} count={likesCount} onToggle={handleLike} onShowLikers={handleShowLikers} />
         </div>
 
@@ -158,16 +244,28 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
           <span className="text-sm font-medium text-[#212121]">Share</span>
           <span className="text-sm text-[#666666]">{comment.time}</span>
           {isOwner && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="text-xs text-[#C4C4C4] hover:text-red-500"
-              title="Delete comment"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-            </button>
+            <>
+              <button
+                onClick={handleStartEdit}
+                className="text-xs text-[#C4C4C4] hover:text-[#1890FF]"
+                title="Edit comment"
+              >
+                <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M8.25 3H3a1.5 1.5 0 00-1.5 1.5V15A1.5 1.5 0 003 16.5h10.5A1.5 1.5 0 0015 15V9.75" />
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M13.875 1.875a1.591 1.591 0 112.25 2.25L9 11.25 6 12l.75-3 7.125-7.125z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-xs text-[#C4C4C4] hover:text-red-500"
+                title="Delete comment"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            </>
           )}
         </div>
 
@@ -181,7 +279,33 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
                     <a href="/profile" className="text-xs font-semibold text-[#212121] hover:text-[#1890FF]">
                       {reply.author}
                     </a>
-                    <p className="text-xs text-[#2D3748] mt-0.5">{reply.text}</p>
+                    {editingReplyId === reply.id ? (
+                      <div className="mt-1">
+                        <textarea
+                          value={editReplyText}
+                          onChange={(e) => setEditReplyText(e.target.value)}
+                          className="w-full bg-white border border-[#E8E8E8] rounded-md p-1.5 text-xs text-[#2D3748] resize-none focus:border-[#1890FF] focus:ring-0 min-h-[40px]"
+                          rows={1}
+                        />
+                        <div className="flex items-center gap-2 mt-1">
+                          <button
+                            onClick={() => handleSaveReplyEdit(reply.id)}
+                            disabled={!editReplyText.trim()}
+                            className="px-2 py-0.5 text-xs text-white bg-[#1890FF] hover:bg-blue-600 rounded-md disabled:opacity-50"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelReplyEdit}
+                            className="px-2 py-0.5 text-xs text-[#666666] hover:bg-gray-100 rounded-md"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[#2D3748] mt-0.5">{reply.text}</p>
+                    )}
                     <div onClick={() => handleReplyLike(reply.id, reply.liked, reply.likes)} className="absolute right-0 bottom-0 translate-y-1/2 flex items-center gap-0.5 bg-white shadow-lg rounded-xl px-3 py-1 cursor-pointer z-10">
                       <span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill={reply.liked ? "red" : "none"} stroke="red" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -196,16 +320,28 @@ export default function CommentItem({ comment, onCommentAdded, onDelete }: Comme
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-xs text-[#666666]">{reply.time}</span>
                     {currentUser?.uuid === reply.userUuid && (
-                      <button
-                        onClick={() => handleReplyDelete(reply.id)}
-                        className="text-xs text-[#C4C4C4] hover:text-red-500"
-                        title="Delete reply"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleStartReplyEdit(reply.id, reply.text)}
+                          className="text-xs text-[#C4C4C4] hover:text-[#1890FF]"
+                          title="Edit reply"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 18 18" fill="none">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M8.25 3H3a1.5 1.5 0 00-1.5 1.5V15A1.5 1.5 0 003 16.5h10.5A1.5 1.5 0 0015 15V9.75" />
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M13.875 1.875a1.591 1.591 0 112.25 2.25L9 11.25 6 12l.75-3 7.125-7.125z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleReplyDelete(reply.id)}
+                          className="text-xs text-[#C4C4C4] hover:text-red-500"
+                          title="Delete reply"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

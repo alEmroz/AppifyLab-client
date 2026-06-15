@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-toastify";
 import LikersModal from "./LikersModal";
 import { toggleLikePost, fetchLikers } from "../../api";
 
@@ -29,7 +30,8 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
       const result = await toggleLikePost(postId);
       setLiked(result.is_liked);
       setCount(result.likes_count);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setLiked(prevLiked);
       setCount(prevCount);
     }
@@ -41,7 +43,8 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
       const result = await fetchLikers(postId);
       setLikersList(result.users);
       setLikersCursor(result.nextCursor);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setLikersList([]);
     } finally {
       setLoadingLikers(false);
@@ -56,8 +59,9 @@ export default function PostActions({ postId, likesCount, commentsCount, liked: 
       const result = await fetchLikers(postId, likersCursor);
       setLikersList((prev) => [...prev, ...result.users]);
       setLikersCursor(result.nextCursor);
-    } catch {
-      // silently fail
+    } catch (err) {
+      toast.error("Couldn't load likes.");
+      console.error(err);
     } finally {
       setLoadingLikers(false);
     }

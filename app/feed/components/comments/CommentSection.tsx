@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import CommentInput from "./CommentInput";
 import CommentItem from "./CommentItem";
+import { toast } from "react-toastify";
 import { fetchComments, addComment, Comment } from "../../api";
 
 interface CommentSectionProps {
@@ -45,8 +46,9 @@ export default function CommentSection({ postUuid, inputRef, onCommentAdded, onD
         const result = await fetchComments(postUuid);
         setComments(result.comments);
         setNextCursor(result.nextCursor);
-      } catch {
-        console.error("Failed to fetch comments");
+      } catch (err) {
+        toast.error("Couldn't load comments.");
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -60,8 +62,9 @@ export default function CommentSection({ postUuid, inputRef, onCommentAdded, onD
       const result = await fetchComments(postUuid, nextCursor);
       setComments((prev) => [...prev, ...result.comments]);
       setNextCursor(result.nextCursor);
-    } catch {
-      console.error("Failed to load more comments");
+    } catch (err) {
+      toast.error("Couldn't load more comments.");
+      console.error(err);
     } finally {
       setLoadingMore(false);
     }
@@ -77,8 +80,9 @@ export default function CommentSection({ postUuid, inputRef, onCommentAdded, onD
       const newComment = await addComment(postUuid, text);
       setComments([newComment, ...comments]);
       onCommentAdded?.();
-    } catch {
-      console.error("Failed to add comment");
+    } catch (err) {
+      toast.error("Couldn't add your comment. Try again.");
+      console.error(err);
     }
   };
 
